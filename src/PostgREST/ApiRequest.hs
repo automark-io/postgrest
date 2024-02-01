@@ -171,6 +171,7 @@ data ApiRequest = ApiRequest {
   , iColumns              :: S.Set FieldName                  -- ^ parsed colums from &columns parameter and payload
   , iHeaders              :: [(ByteString, ByteString)]       -- ^ HTTP request headers
   , iCookies              :: [(ByteString, ByteString)]       -- ^ Request Cookies
+  , iTraceID              :: Maybe ByteString                 -- ^ Request Trace ID
   , iPath                 :: ByteString                       -- ^ Raw request path
   , iMethod               :: ByteString                       -- ^ Raw request method
   , iSchema               :: Schema                           -- ^ The request schema. Can vary depending on profile headers.
@@ -275,6 +276,7 @@ apiRequest conf sCache req reqBody queryparams@QueryParams{..} PathInfo{pathName
       , iHeaders = [ (CI.foldedCase k, v) | (k,v) <- hdrs, k /= hCookie]
       , iCookies = maybe [] parseCookies $ lookupHeader "Cookie"
       , iPath = rawPathInfo req
+      , iTraceID = lookupHeader "traceparent"
       , iMethod = method
       , iSchema = schema
       , iNegotiatedByProfile = negotiatedByProfile

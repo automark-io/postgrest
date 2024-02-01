@@ -56,8 +56,8 @@ data ResultSet
 
 
 prepareWrite :: SQL.Snippet -> SQL.Snippet -> Bool -> MediaType ->
-                PreferRepresentation -> [Text] -> Bool -> SQL.Statement () ResultSet
-prepareWrite selectQuery mutateQuery isInsert mt rep pKeys =
+                PreferRepresentation -> [Text] -> Maybe ByteString -> Bool -> SQL.Statement () ResultSet
+prepareWrite selectQuery mutateQuery isInsert mt rep pKeys traceid =
   SQL.dynamicallyParameterized (mtSnippet mt snippet) decodeIt
  where
   snippet =
@@ -71,7 +71,7 @@ prepareWrite selectQuery mutateQuery isInsert mt rep pKeys =
       responseHeadersF <> " AS response_headers, " <>
       responseStatusF  <> " AS response_status "
     ) <>
-    "FROM (" <> selectF <> ") _postgrest_t"
+    "FROM (" <> selectF <> ") _postgrest_t" <> (SQL.sql (traceIdCommentF traceid))
 
   locF =
     if isInsert && rep == HeadersOnly
@@ -99,8 +99,8 @@ prepareWrite selectQuery mutateQuery isInsert mt rep pKeys =
     MTPlan{} -> planRow
     _        -> fromMaybe (RSStandard Nothing 0 mempty mempty Nothing Nothing) <$> HD.rowMaybe (standardRow False)
 
-prepareRead :: SQL.Snippet -> SQL.Snippet -> Bool -> MediaType -> Maybe FieldName -> Bool -> SQL.Statement () ResultSet
-prepareRead selectQuery countQuery countTotal mt binaryField =
+prepareRead :: SQL.Snippet -> SQL.Snippet -> Bool -> MediaType -> Maybe FieldName -> Maybe ByteString -> Bool -> SQL.Statement () ResultSet
+prepareRead selectQuery countQuery countTotal mt binaryField traceid =
   SQL.dynamicallyParameterized (mtSnippet mt snippet) decodeIt
  where
   snippet =
@@ -113,7 +113,7 @@ prepareRead selectQuery countQuery countTotal mt binaryField =
       bodyF <> " AS body, " <>
       responseHeadersF <> " AS response_headers, " <>
       responseStatusF <> " AS response_status " <>
-    "FROM ( SELECT * FROM " <> sourceCTEName <> " ) _postgrest_t")
+    "FROM ( SELECT * FROM " <> sourceCTEName <> " ) _postgrest_t" <> (traceIdCommentF traceid))
 
   (countCTEF, countResultF) = countF countQuery countTotal
 
@@ -131,9 +131,9 @@ prepareRead selectQuery countQuery countTotal mt binaryField =
     _        -> HD.singleRow $ standardRow True
 
 prepareCall :: Bool -> Bool -> SQL.Snippet -> SQL.Snippet -> SQL.Snippet -> Bool ->
-               MediaType -> Bool -> Maybe FieldName -> Bool ->
+               MediaType -> Bool -> Maybe FieldName -> Maybe ByteString -> Bool ->
                SQL.Statement () ResultSet
-prepareCall returnsScalar returnsSingle callProcQuery selectQuery countQuery countTotal mt multObjects binaryField =
+prepareCall returnsScalar returnsSingle callProcQuery selectQuery countQuery countTotal mt multObjects binaryField traceid =
   SQL.dynamicallyParameterized (mtSnippet mt snippet) decodeIt
   where
     snippet =
@@ -146,7 +146,7 @@ prepareCall returnsScalar returnsSingle callProcQuery selectQuery countQuery cou
         bodyF <> " AS body, " <>
         responseHeadersF <> " AS response_headers, " <>
         responseStatusF <> " AS response_status ") <>
-      "FROM (" <> selectQuery <> ") _postgrest_t"
+      "FROM (" <> selectQuery <> ") _postgrest_t" <> (SQL.sql (traceIdCommentF traceid))
 
     (countCTEF, countResultF) = countF countQuery countTotal
 

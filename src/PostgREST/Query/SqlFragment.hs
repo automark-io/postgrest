@@ -31,6 +31,7 @@ module PostgREST.Query.SqlFragment
   , pgFmtOrderTerm
   , pgFmtSelectItem
   , responseHeadersF
+  , traceIdCommentF
   , responseStatusF
   , returningF
   , selectBody
@@ -348,6 +349,11 @@ limitOffsetF range =
 
 responseHeadersF :: SqlFragment
 responseHeadersF = currentSettingF "response.headers"
+
+traceIdCommentF :: Maybe ByteString -> ByteString
+traceIdCommentF traceid = case traceid of
+  Just tid -> " /* traceparent: \"" <> tid <> "\" */"
+  Nothing  -> mempty
 
 responseStatusF :: SqlFragment
 responseStatusF = currentSettingF "response.status"

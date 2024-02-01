@@ -86,6 +86,7 @@ readQuery req conf@AppConfig{..} apiReq@ApiRequest{..} = do
         (shouldCount iPreferCount)
         iAcceptMediaType
         iBinaryField
+        iTraceID
         configDbPreparedStatements
   failNotSingular iAcceptMediaType resultSet
   optionalRollback conf apiReq
@@ -169,6 +170,7 @@ invokeQuery proc CallReadPlan{crReadPlan, crCallPlan} apiReq@ApiRequest{..} conf
         iAcceptMediaType
         (iPreferParameters == Just MultipleObjects)
         iBinaryField
+        iTraceID
         configDbPreparedStatements
 
   optionalRollback conf apiReq
@@ -211,7 +213,7 @@ txMode ApiRequest{..} =
       SQL.Write
 
 writeQuery :: MutateReadPlan -> ApiRequest -> AppConfig  -> DbHandler ResultSet
-writeQuery MutateReadPlan{mrReadPlan, mrMutatePlan} apiReq conf =
+writeQuery MutateReadPlan{mrReadPlan, mrMutatePlan} apiReq@ApiRequest{iTraceID} conf =
   let
     (isInsert, pkCols) = case mrMutatePlan of {Insert{insPkCols} -> (True, insPkCols); _ -> (False, mempty);}
   in
@@ -223,6 +225,7 @@ writeQuery MutateReadPlan{mrReadPlan, mrMutatePlan} apiReq conf =
       (iAcceptMediaType apiReq)
       (iPreferRepresentation apiReq)
       pkCols
+      iTraceID
       (configDbPreparedStatements conf)
 
 -- |
