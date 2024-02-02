@@ -352,7 +352,7 @@ responseHeadersF = currentSettingF "response.headers"
 
 traceIdCommentF :: Maybe ByteString -> ByteString
 traceIdCommentF traceid = case traceid of
-  Just tid -> " /* traceparent: \"" <> tid <> "\" */"
+  Just tid -> "/* traceparent='" <> tid <> "'*/"
   Nothing  -> mempty
 
 responseStatusF :: SqlFragment
